@@ -305,7 +305,16 @@ export function PortfolioPage({ lang, theme, feel = {}, phone }) {
   const fg = isLight ? '#1a1208' : '#F7F3E9'
   const gold = feel.gold || '#D4AF37'
 
+  // ── URLs de demos reales — agrega la URL cuando el demo esté listo ──────────
+  const demoUrls = [
+    null,  // Boda Clásica   → ej: 'https://invitaura.com.mx/demos/boda'
+    null,  // XV Años        → ej: 'https://invitaura.com.mx/demos/xv'
+    null,  // Bautizo        → ej: 'https://invitaura.com.mx/demos/bautizo'
+    null,  // Graduación     → ej: 'https://invitaura.com.mx/demos/graduacion'
+  ]
+
   const [activeDemo, setActiveDemo] = React.useState(null)
+  const [previewTab, setPreviewTab] = React.useState(0)
   const [tilt, setTilt] = React.useState({})
 
   const handleMouseMove = (e, i) => {
@@ -369,12 +378,11 @@ export function PortfolioPage({ lang, theme, feel = {}, phone }) {
             return (
               <RevealOnScroll key={i} delay={i * 0.08}>
                 <div
+                  className="demo-card"
                   onMouseMove={e => handleMouseMove(e, i)}
                   onMouseLeave={() => handleMouseLeave(i)}
                   onClick={() => setActiveDemo(i)}
                   style={{
-                    aspectRatio:'5/4', cursor:'pointer', position:'relative', overflow:'hidden',
-                    borderRadius:24,
                     background:`
                       radial-gradient(ellipse at top right, ${th.accent}25, transparent 55%),
                       radial-gradient(ellipse at bottom left, ${th.accent2}15, transparent 50%),
@@ -437,6 +445,76 @@ export function PortfolioPage({ lang, theme, feel = {}, phone }) {
             )
           })}
         </div>
+
+        {/* ── Sección Preview ── visible solo cuando hay al menos una URL de demo */}
+        {demoUrls.some(u => u) && (
+          <div style={{ marginTop:100 }}>
+            <RevealOnScroll>
+              <div style={{ textAlign:'center', marginBottom:48 }}>
+                <div style={{ width:40, height:1, background:gold, margin:'0 auto 32px' }}/>
+                <h2 style={{ fontFamily:'Cinzel, serif', fontSize:'clamp(20px,3vw,40px)',
+                  fontWeight:400, letterSpacing:6, color:fg, marginBottom:16 }}>
+                  {lang === 'es' ? 'PREVIEW EN VIVO' : 'LIVE PREVIEW'}
+                </h2>
+                <p style={{ fontFamily:'Cormorant Garamond, serif', fontSize:18,
+                  color:'rgba(247,243,233,0.6)', maxWidth:480, margin:'0 auto' }}>
+                  {lang === 'es'
+                    ? 'Así verán tus invitados la invitación en su celular'
+                    : 'This is how your guests will see the invitation on their phone'}
+                </p>
+              </div>
+            </RevealOnScroll>
+
+            {/* Tabs de selección */}
+            <div style={{ display:'flex', justifyContent:'center', gap:8, marginBottom:40, flexWrap:'wrap' }}>
+              {t.demos.map((demo, i) => demoUrls[i] && (
+                <button key={i} onClick={() => setPreviewTab(i)} style={{
+                  fontFamily:'Cinzel, serif', fontSize:10, letterSpacing:2,
+                  padding:'10px 22px', borderRadius:9999, border:'none', cursor:'pointer',
+                  background: previewTab === i ? demoThemes[i].accent : 'rgba(255,255,255,0.06)',
+                  color: previewTab === i ? '#0c0a06' : 'rgba(247,243,233,0.7)',
+                  transition:'all 0.25s',
+                }}>{demo.type.toUpperCase()}</button>
+              ))}
+            </div>
+
+            {/* Frame del celular con iframe */}
+            {demoUrls[previewTab] && (
+              <RevealOnScroll>
+                <div style={{ display:'flex', justifyContent:'center' }}>
+                  {/* Silueta de celular */}
+                  <div style={{
+                    width:320, background:'#111', borderRadius:44,
+                    padding:'12px 10px',
+                    boxShadow:`0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08), inset 0 0 0 2px #222`,
+                    position:'relative',
+                  }}>
+                    {/* Notch */}
+                    <div style={{
+                      width:90, height:24, background:'#111', borderRadius:12,
+                      margin:'0 auto 8px',
+                      boxShadow:'inset 0 0 0 1px rgba(255,255,255,0.06)',
+                    }}/>
+                    {/* Pantalla con iframe */}
+                    <div style={{ borderRadius:28, overflow:'hidden', height:620, background:'#000' }}>
+                      <iframe
+                        src={demoUrls[previewTab]}
+                        title={t.demos[previewTab].title}
+                        style={{ width:'100%', height:'100%', border:'none' }}
+                        loading="lazy"
+                      />
+                    </div>
+                    {/* Home bar */}
+                    <div style={{
+                      width:100, height:4, background:'rgba(255,255,255,0.2)',
+                      borderRadius:2, margin:'10px auto 0',
+                    }}/>
+                  </div>
+                </div>
+              </RevealOnScroll>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Demo modal */}
@@ -793,6 +871,115 @@ export function ContactPage({ lang, theme, feel = {}, phone }) {
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+// ── DemoPage ──────────────────────────────────────────────────────────────────
+export function DemoPage({ id, lang, setPage, feel = {} }) {
+  const gold = feel.gold || '#D4AF37'
+
+  const demoData = {
+    boda:       { titleEs: 'Boda Clásica',  titleEn: 'Classic Wedding', accent: '#D4AF37', icon: '◇', descEs: 'Elegancia atemporal con sello de cera, partículas doradas y cuenta regresiva.', descEn: 'Timeless elegance with wax seal, golden particles and countdown.' },
+    xv:         { titleEs: 'XV Años',       titleEn: 'Sweet 16',        accent: '#E8A4B8', icon: '✦', descEs: 'Magia y color. Efectos floreales, música y galería de fotos.', descEn: 'Magic and color. Floral effects, music and photo gallery.' },
+    bautizo:    { titleEs: 'Bautizo',       titleEn: 'Baptism',         accent: '#A8CFDE', icon: '☽', descEs: 'Delicadeza celestial con tonos suaves y filigrana ornamental.', descEn: 'Celestial delicacy with soft tones and ornamental filigree.' },
+    graduacion: { titleEs: 'Graduación',    titleEn: 'Graduation',      accent: '#C5D8A8', icon: '✶', descEs: 'Modernidad y logro. Tipografía bold y animaciones dinámicas.', descEn: 'Modern achievement. Bold typography and dynamic animations.' },
+  }
+
+  const demo = demoData[id] || demoData.boda
+  const title = lang === 'es' ? demo.titleEs : demo.titleEn
+  const desc  = lang === 'es' ? demo.descEs  : demo.descEn
+  const accent = demo.accent
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 'clamp(24px, 6vw, 80px)',
+      textAlign: 'center',
+      position: 'relative',
+    }}>
+      {/* Back button */}
+      <button
+        onClick={() => setPage('portfolio')}
+        style={{
+          position: 'fixed', top: 24, left: 24, zIndex: 100,
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'rgba(12,10,6,0.7)', backdropFilter: 'blur(12px)',
+          border: `1px solid ${gold}30`, borderRadius: 9999,
+          padding: '10px 20px', color: gold, cursor: 'pointer',
+          fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 2,
+          transition: 'all 0.3s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = `${gold}15`; e.currentTarget.style.borderColor = gold }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(12,10,6,0.7)'; e.currentTarget.style.borderColor = `${gold}30` }}
+      >
+        ← {lang === 'es' ? 'VOLVER' : 'BACK'}
+      </button>
+
+      {/* Icon */}
+      <div style={{
+        fontSize: 64, color: accent, marginBottom: 24,
+        filter: `drop-shadow(0 0 24px ${accent}60)`,
+        animation: 'spinSlow 12s linear infinite',
+      }}>
+        {demo.icon}
+      </div>
+
+      {/* Title */}
+      <h1 style={{
+        fontFamily: 'Cinzel, serif',
+        fontSize: 'clamp(28px, 6vw, 56px)',
+        letterSpacing: 6,
+        color: '#F7F3E9',
+        marginBottom: 16,
+      }}>
+        {title.toUpperCase()}
+      </h1>
+
+      {/* Coming soon badge */}
+      <div className="liquid-glass" style={{
+        borderRadius: 9999,
+        padding: '6px 20px',
+        marginBottom: 32,
+        display: 'inline-block',
+      }}>
+        <span style={{
+          fontFamily: 'Cinzel, serif', fontSize: 10, letterSpacing: 3,
+          color: accent,
+        }}>
+          {lang === 'es' ? 'PRÓXIMAMENTE' : 'COMING SOON'}
+        </span>
+      </div>
+
+      {/* Description */}
+      <p style={{
+        fontFamily: 'Cormorant Garamond, serif',
+        fontSize: 'clamp(16px, 2.5vw, 22px)',
+        color: 'rgba(247,243,233,0.65)',
+        maxWidth: 500,
+        lineHeight: 1.6,
+        marginBottom: 48,
+      }}>
+        {desc}
+      </p>
+
+      {/* CTA */}
+      <button
+        onClick={() => setPage('contact')}
+        style={{
+          fontFamily: 'Cinzel, serif', fontSize: 11, letterSpacing: 3,
+          background: gold, color: '#0c0a06', border: 'none',
+          padding: '16px 36px', cursor: 'pointer', transition: 'background 0.3s',
+        }}
+        onMouseEnter={e => e.currentTarget.style.background = '#C5A059'}
+        onMouseLeave={e => e.currentTarget.style.background = gold}
+      >
+        {lang === 'es' ? 'COTIZAR ESTE ESTILO' : 'QUOTE THIS STYLE'}
+      </button>
     </div>
   )
 }

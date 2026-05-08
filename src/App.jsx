@@ -1,17 +1,16 @@
 import React from 'react'
-import ReactDOM from 'react-dom/client'
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { BackgroundFX, ParticleCanvas, CustomCursor, NavBar, WhatsAppBtn, GoldOrnament } from './components'
-import { HomePage, PortfolioPage, PricingPage, AboutPage, ContactPage } from './pages'
+import { HomePage, PortfolioPage, PricingPage, AboutPage, ContactPage, DemoPage } from './pages'
 
 // ── Número de WhatsApp — actualizar aquí ──────────────────────────────────────
-// Formato: código de país + número sin espacios ni guiones (ej. 5213312345678)
-const WHATSAPP_PHONE = '5213312345678'
+const WHATSAPP_PHONE = '5213322244222'
 
 const TWEAK_DEFAULTS = {
-  theme: 'oscuro',
+  theme: 'midnight',
   ambiente: 'ceremonial',
   auraLevel: 3,
-  particleMode: 'ember',
+  particleMode: 'constellation',
   atmosfera: 'aurora',
   lang: 'es',
 }
@@ -22,17 +21,29 @@ function computeFeel(tweaks) {
   }
   return {
     gold: goldByLevel[tweaks.auraLevel] || '#D4AF37',
-    heroSize: tweaks.ambiente === 'vanguardista' ? 'clamp(76px, 13vw, 168px)' : tweaks.ambiente === 'intimo' ? 'clamp(36px, 5.5vw, 78px)' : 'clamp(52px, 10vw, 130px)',
     spacing: tweaks.ambiente === 'intimo' ? 0.7 : tweaks.ambiente === 'vanguardista' ? 1.35 : 1.0,
     glow: tweaks.auraLevel >= 4,
   }
 }
 
+// Sube al tope al cambiar de ruta
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  React.useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
+}
+
+// Extrae la página activa del pathname para el NavBar
+function getActivePage(pathname) {
+  if (pathname === '/') return 'home'
+  if (pathname.startsWith('/demos')) return 'portfolio'
+  return pathname.slice(1)
+}
+
 function App() {
   const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS)
-  const [page, setPage] = React.useState('home')
-  const [transitioning, setTransitioning] = React.useState(false)
-  const [displayPage, setDisplayPage] = React.useState('home')
+  const navigate = useNavigate()
+  const location = useLocation()
 
   const lang = tweaks.lang
   const setLang = (l) => setTweaks(p => ({ ...p, lang: l }))
@@ -40,16 +51,19 @@ function App() {
   const isLight = theme === 'champagne'
   const feel = computeFeel(tweaks)
 
-  const navigateTo = (newPage) => {
-    if (newPage === displayPage) return
-    setTransitioning(true)
-    setTimeout(() => {
-      setDisplayPage(newPage)
-      setPage(newPage)
-      window.scrollTo(0, 0)
-      setTimeout(() => setTransitioning(false), 50)
-    }, 320)
-  }
+  // Transición de página
+  const [transitioning, setTransitioning] = React.useState(false)
+  const prevPath = React.useRef(location.pathname)
+  React.useEffect(() => {
+    if (location.pathname !== prevPath.current) {
+      setTransitioning(true)
+      const t = setTimeout(() => setTransitioning(false), 350)
+      prevPath.current = location.pathname
+      return () => clearTimeout(t)
+    }
+  }, [location.pathname])
+
+  const setPage = (page) => navigate(page === 'home' ? '/' : `/${page}`)
 
   const particleColors = {
     oscuro:    ['#D4AF37', '#C5A059', '#F5E27A', '#B8960A'],
@@ -61,17 +75,11 @@ function App() {
     ? [feel.gold, ...particleColors.slice(1)]
     : particleColors
 
-  const pageProps = { lang, setPage: navigateTo, theme, feel, phone: WHATSAPP_PHONE }
-
-  const pages = {
-    home:      <HomePage      {...pageProps} />,
-    portfolio: <PortfolioPage {...pageProps} />,
-    pricing:   <PricingPage   {...pageProps} />,
-    about:     <AboutPage     {...pageProps} />,
-    contact:   <ContactPage   {...pageProps} />,
-  }
-
   const showParticles = tweaks.particleMode !== 'none' && theme !== 'champagne'
+  const activePage = getActivePage(location.pathname)
+  const isDemoRoute = location.pathname.startsWith('/demos/')
+
+  const pageProps = { lang, setPage, theme, feel, phone: WHATSAPP_PHONE }
 
   const socialLinks = {
     Instagram: 'https://instagram.com/invitaura',
@@ -88,6 +96,7 @@ function App() {
         `}</style>
       )}
 
+      <ScrollToTop />
       <BackgroundFX mode={tweaks.atmosfera} theme={theme} />
 
       {showParticles && (
@@ -100,9 +109,12 @@ function App() {
 
       <CustomCursor color={feel.gold} />
 
-      <NavBar page={page} setPage={navigateTo} lang={lang} setLang={setLang} theme={theme} />
+      {/* NavBar oculto en páginas de demo para experiencia inmersiva */}
+      {!isDemoRoute && (
+        <NavBar page={activePage} setPage={setPage} lang={lang} setLang={setLang} theme={theme} />
+      )}
 
-      {/* Page transition overlay */}
+      {/* Overlay de transición */}
       <div style={{
         position:'fixed', inset:0, zIndex:200, pointerEvents:'none',
         background:'linear-gradient(135deg, #0c0a06, #1a1208)',
@@ -110,39 +122,54 @@ function App() {
       }}/>
 
       <div style={{ position:'relative', zIndex:1 }}>
-        {pages[displayPage]}
+        <Routes>
+          <Route path="/"          element={<HomePage      {...pageProps} />} />
+          <Route path="/portfolio" element={<PortfolioPage {...pageProps} />} />
+          <Route path="/pricing"   element={<PricingPage   {...pageProps} />} />
+          <Route path="/about"     element={<AboutPage     {...pageProps} />} />
+          <Route path="/contact"   element={<ContactPage   {...pageProps} />} />
+
+          {/* Rutas de demos — reemplaza el elemento con el componente real cuando esté listo */}
+          <Route path="/demos/boda"       element={<DemoPage id="boda"       lang={lang} setPage={setPage} feel={feel} />} />
+          <Route path="/demos/xv"         element={<DemoPage id="xv"         lang={lang} setPage={setPage} feel={feel} />} />
+          <Route path="/demos/bautizo"    element={<DemoPage id="bautizo"    lang={lang} setPage={setPage} feel={feel} />} />
+          <Route path="/demos/graduacion" element={<DemoPage id="graduacion" lang={lang} setPage={setPage} feel={feel} />} />
+        </Routes>
       </div>
 
-      {/* Footer */}
-      <footer style={{
-        background: isLight ? '#1a1208' : 'transparent',
-        borderTop:'1px solid rgba(212,175,55,0.12)',
-        padding:'40px clamp(16px,5vw,48px)',
-        display:'flex', alignItems:'center', justifyContent:'space-between',
-        flexWrap:'wrap', gap:24,
-        position:'relative', zIndex:1,
-      }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <GoldOrnament size={28} />
-          <span style={{ fontFamily:'Cinzel, serif', fontSize:13, color:feel.gold, letterSpacing:3 }}>INVITAURA</span>
-        </div>
-        <span style={{ fontFamily:'Cormorant Garamond, serif', fontSize:13, color:'#666', letterSpacing:1 }}>
-          © 2026 Invitaura · Jalisco, México · @invitaura
-        </span>
-        <div style={{ display:'flex', gap:20 }}>
-          {Object.entries(socialLinks).map(([name, href]) => (
-            <a key={name} href={href} target="_blank" rel="noopener noreferrer" style={{
-              fontFamily:'Cinzel, serif', fontSize:9, letterSpacing:2,
-              color:`${feel.gold}70`, textDecoration:'none', transition:'color 0.3s',
-            }}
-              onMouseEnter={e => e.currentTarget.style.color = feel.gold}
-              onMouseLeave={e => e.currentTarget.style.color = `${feel.gold}70`}
-            >{name}</a>
-          ))}
-        </div>
-      </footer>
-
-      <WhatsAppBtn lang={lang} phone={WHATSAPP_PHONE} />
+      {/* Footer y WhatsApp ocultos en demos */}
+      {!isDemoRoute && (
+        <>
+          <footer style={{
+            background: isLight ? '#1a1208' : 'transparent',
+            borderTop:'1px solid rgba(212,175,55,0.12)',
+            padding:'40px clamp(16px,5vw,48px)',
+            display:'flex', alignItems:'center', justifyContent:'space-between',
+            flexWrap:'wrap', gap:24,
+            position:'relative', zIndex:1,
+          }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <GoldOrnament size={28} />
+              <span style={{ fontFamily:'Cinzel, serif', fontSize:13, color:feel.gold, letterSpacing:3 }}>INVITAURA</span>
+            </div>
+            <span style={{ fontFamily:'Cormorant Garamond, serif', fontSize:13, color:'#666', letterSpacing:1 }}>
+              © 2026 Invitaura · Jalisco, México · @invitaura
+            </span>
+            <div style={{ display:'flex', gap:20 }}>
+              {Object.entries(socialLinks).map(([name, href]) => (
+                <a key={name} href={href} target="_blank" rel="noopener noreferrer" style={{
+                  fontFamily:'Cinzel, serif', fontSize:9, letterSpacing:2,
+                  color:`${feel.gold}70`, textDecoration:'none', transition:'color 0.3s',
+                }}
+                  onMouseEnter={e => e.currentTarget.style.color = feel.gold}
+                  onMouseLeave={e => e.currentTarget.style.color = `${feel.gold}70`}
+                >{name}</a>
+              ))}
+            </div>
+          </footer>
+          <WhatsAppBtn lang={lang} phone={WHATSAPP_PHONE} />
+        </>
+      )}
     </div>
   )
 }
