@@ -2,6 +2,8 @@ import React from 'react'
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { BackgroundFX, ParticleCanvas, CustomCursor, NavBar, WhatsAppBtn, GoldOrnament } from './components'
 import { HomePage, PortfolioPage, PricingPage, AboutPage, ContactPage, DemoPage } from './pages'
+import { BodaDemo } from './demos/BodaDemo'
+import { GeneradorBoda } from './generador/GeneradorBoda'
 
 // ── Número de WhatsApp — actualizar aquí ──────────────────────────────────────
 const WHATSAPP_PHONE = '5213322244222'
@@ -77,7 +79,7 @@ function App() {
 
   const showParticles = tweaks.particleMode !== 'none' && theme !== 'champagne'
   const activePage = getActivePage(location.pathname)
-  const isDemoRoute = location.pathname.startsWith('/demos/')
+  const isDemoRoute = location.pathname.startsWith('/demos/') || location.pathname.startsWith('/generador/')
 
   const pageProps = { lang, setPage, theme, feel, phone: WHATSAPP_PHONE }
 
@@ -130,7 +132,8 @@ function App() {
           <Route path="/contact"   element={<ContactPage   {...pageProps} />} />
 
           {/* Rutas de demos — reemplaza el elemento con el componente real cuando esté listo */}
-          <Route path="/demos/boda"       element={<DemoPage id="boda"       lang={lang} setPage={setPage} feel={feel} />} />
+          <Route path="/demos/boda"             element={<BodaDemo setPage={setPage} />} />
+          <Route path="/generador/boda"         element={<GeneradorBoda />} />
           <Route path="/demos/xv"         element={<DemoPage id="xv"         lang={lang} setPage={setPage} feel={feel} />} />
           <Route path="/demos/bautizo"    element={<DemoPage id="bautizo"    lang={lang} setPage={setPage} feel={feel} />} />
           <Route path="/demos/graduacion" element={<DemoPage id="graduacion" lang={lang} setPage={setPage} feel={feel} />} />
