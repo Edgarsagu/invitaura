@@ -4,6 +4,7 @@ import { BackgroundFX, ParticleCanvas, CustomCursor, NavBar, WhatsAppBtn, GoldOr
 import { HomePage, PortfolioPage, PricingPage, AboutPage, ContactPage, DemoPage } from './pages'
 import { BodaDemo } from './demos/BodaDemo'
 import { GeneradorBoda } from './generador/GeneradorBoda'
+import { DashboardBoda } from './analytics/DashboardBoda'
 
 // ── Número de WhatsApp — actualizar aquí ──────────────────────────────────────
 const WHATSAPP_PHONE = '5213322244222'
@@ -79,7 +80,7 @@ function App() {
 
   const showParticles = tweaks.particleMode !== 'none' && theme !== 'champagne'
   const activePage = getActivePage(location.pathname)
-  const isDemoRoute = location.pathname.startsWith('/demos/') || location.pathname.startsWith('/generador/')
+  const isDemoRoute = location.pathname.startsWith('/demos/') || location.pathname.startsWith('/generador/') || location.pathname.startsWith('/analytics/')
 
   const pageProps = { lang, setPage, theme, feel, phone: WHATSAPP_PHONE }
 
@@ -134,6 +135,7 @@ function App() {
           {/* Rutas de demos — reemplaza el elemento con el componente real cuando esté listo */}
           <Route path="/demos/boda"             element={<BodaDemo setPage={setPage} />} />
           <Route path="/generador/boda"         element={<GeneradorBoda />} />
+          <Route path="/analytics/boda"         element={<DashboardBoda />} />
           <Route path="/demos/xv"         element={<DemoPage id="xv"         lang={lang} setPage={setPage} feel={feel} />} />
           <Route path="/demos/bautizo"    element={<DemoPage id="bautizo"    lang={lang} setPage={setPage} feel={feel} />} />
           <Route path="/demos/graduacion" element={<DemoPage id="graduacion" lang={lang} setPage={setPage} feel={feel} />} />

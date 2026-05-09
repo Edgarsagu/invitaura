@@ -1,6 +1,7 @@
 import React from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
+import { track } from '../analytics/tracker'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIG — edita aquí todo el contenido de la invitación
@@ -412,7 +413,7 @@ function OutlineBtn({ href, onClick, children }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Trivia interactiva sobre los novios
 // ─────────────────────────────────────────────────────────────────────────────
-function TriviaSection({ preguntas }) {
+function TriviaSection({ preguntas, onComplete }) {
   const [estado, setEstado]       = React.useState('idle')   // idle | playing | result
   const [idx, setIdx]             = React.useState(0)
   const [score, setScore]         = React.useState(0)
@@ -437,7 +438,7 @@ function TriviaSection({ preguntas }) {
   }
 
   const siguiente = () => {
-    if (isLast) { setEstado('result') }
+    if (isLast) { setEstado('result'); onComplete?.(score, total) }
     else {
       setIdx(i => i + 1); setSeleccion(null)
       setMostrarDato(false); setAnimKey(k => k + 1)
@@ -749,6 +750,11 @@ export function BodaDemo({ setPage }) {
   const [paseOpen, setPaseOpen] = React.useState(false)
   const time = useCountdown(CONFIG.fechaISO)
 
+  // Track view once the seal is opened (avoids counting bots that never interact)
+  React.useEffect(() => {
+    if (opened) track('boda-sofia-alejandro', 'view')
+  }, [opened])
+
   // Parámetros de URL para pase personalizado
   // Ejemplo: /demos/boda?invitado=Eduardo%20Torres&mesa=5&pases=2
   const [searchParams] = useSearchParams()
@@ -798,7 +804,7 @@ export function BodaDemo({ setPage }) {
       {/* Botón flotante MI PASE — solo visible si hay parámetro ?invitado= */}
       {invitado && (
         <button
-          onClick={() => setPaseOpen(true)}
+          onClick={() => { setPaseOpen(true); track('boda-sofia-alejandro', 'pase_view') }}
           style={{
             position: 'fixed', bottom: 28, right: 28, zIndex: 500,
             display: 'flex', alignItems: 'center', gap: 8,
@@ -986,7 +992,10 @@ export function BodaDemo({ setPage }) {
           <p style={{ fontFamily: 'Lora, serif', fontStyle: 'italic', fontSize: 'clamp(17px,2.5vw,22px)', color: D.t2, textAlign: 'center', marginBottom: 40 }}>
             Pon a prueba qué tan bien nos conoces antes del gran día
           </p>
-          <TriviaSection preguntas={CONFIG.trivia} />
+          <TriviaSection
+            preguntas={CONFIG.trivia}
+            onComplete={(score, total) => track('boda-sofia-alejandro', 'trivia_complete', { score, total })}
+          />
         </div>
       </section>
 
@@ -1129,6 +1138,7 @@ export function BodaDemo({ setPage }) {
           <a
             href={`https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(CONFIG.rsvpMensaje)}`}
             target="_blank" rel="noopener noreferrer"
+            onClick={() => track('boda-sofia-alejandro', 'whatsapp_rsvp')}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 12,
               background: '#25D366', color: '#fff', borderRadius: D.rSm,
@@ -1148,6 +1158,7 @@ export function BodaDemo({ setPage }) {
 
           {/* Google Calendar */}
           <a
+            onClick={() => track('boda-sofia-alejandro', 'calendar_add')}
             href={buildCalendarUrl({
               title:       `Boda ${CONFIG.novia} & ${CONFIG.novio}`,
               startISO:    CONFIG.fechaISO,
