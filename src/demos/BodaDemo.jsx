@@ -72,6 +72,39 @@ const CONFIG = {
   whatsapp:    '5213312345678',
   rsvpMensaje: '¡Hola! Confirmo mi asistencia a la boda de Sofía & Alejandro el 20 de septiembre 2026 🎊',
   rsvpFecha:   '1 de septiembre de 2026',
+
+  trivia: [
+    {
+      pregunta: '¿Dónde se conocieron Sofía y Alejandro?',
+      opciones: ['En la universidad', 'En la boda de un amigo', 'Por redes sociales', 'En el trabajo'],
+      correcta: 1,
+      dato: 'Se conocieron en la boda de un amigo en común. ¡El destino los tenía preparados! 💫',
+    },
+    {
+      pregunta: '¿Cuánto tiempo llevan juntos?',
+      opciones: ['2 años', '3 años', '4 años', '5 años'],
+      correcta: 2,
+      dato: '4 años de aventuras, risas y complicidad que los llevan al altar.',
+    },
+    {
+      pregunta: '¿Quién propuso matrimonio?',
+      opciones: ['Sofía', 'Alejandro', 'Fue una decisión mutua', 'Todavía lo debaten'],
+      correcta: 1,
+      dato: 'Alejandro organizó una sorpresa en el lugar de su primera cita. 💍',
+    },
+    {
+      pregunta: '¿Cuál es el viaje favorito que han hecho juntos?',
+      opciones: ['París', 'Nueva York', 'Oaxaca', 'Cancún'],
+      correcta: 2,
+      dato: '¡Oaxaca los enamoró a los dos! El mole, el mezcal y los pueblos mágicos. 🌿',
+    },
+    {
+      pregunta: '¿Cuál es la canción que consideran "de ellos"?',
+      opciones: ['Perfect – Ed Sheeran', 'La Bikina – Rubén Fuentes', 'Tú – Nicky Jam', 'All of Me – John Legend'],
+      correcta: 3,
+      dato: '"All of Me" sonó en su primera cita y nunca la olvidaron. 🎵',
+    },
+  ],
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -374,6 +407,210 @@ function OutlineBtn({ href, onClick, children }) {
   }
   if (href) return <a href={href} target="_blank" rel="noopener noreferrer" style={style} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>{children}</a>
   return <button onClick={onClick} style={{ ...style, border: 'none' }} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>{children}</button>
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Trivia interactiva sobre los novios
+// ─────────────────────────────────────────────────────────────────────────────
+function TriviaSection({ preguntas }) {
+  const [estado, setEstado]       = React.useState('idle')   // idle | playing | result
+  const [idx, setIdx]             = React.useState(0)
+  const [score, setScore]         = React.useState(0)
+  const [seleccion, setSeleccion] = React.useState(null)
+  const [mostrarDato, setMostrarDato] = React.useState(false)
+  const [animKey, setAnimKey]     = React.useState(0)
+
+  const total    = preguntas.length
+  const pregunta = preguntas[idx]
+  const isLast   = idx === total - 1
+
+  const iniciar = () => {
+    setEstado('playing'); setIdx(0); setScore(0)
+    setSeleccion(null); setMostrarDato(false); setAnimKey(k => k + 1)
+  }
+
+  const elegir = (i) => {
+    if (seleccion !== null) return
+    setSeleccion(i)
+    if (i === pregunta.correcta) setScore(s => s + 1)
+    setMostrarDato(true)
+  }
+
+  const siguiente = () => {
+    if (isLast) { setEstado('result') }
+    else {
+      setIdx(i => i + 1); setSeleccion(null)
+      setMostrarDato(false); setAnimKey(k => k + 1)
+    }
+  }
+
+  const pct = score / total
+  const resultado =
+    pct === 1    ? { emoji: '🏆', msg: '¡Perfecto! Definitivamente eres parte de nuestra historia.' } :
+    pct >= 0.8   ? { emoji: '🎉', msg: '¡Casi perfecto! Claramente eres de los cercanos.' }           :
+    pct >= 0.5   ? { emoji: '😊', msg: '¡No está mal! Hay secretos que solo revelaremos en la boda.' } :
+                   { emoji: '😄', msg: 'Apenas nos estás conociendo... ¡pronto sabrás más!' }
+
+  const compartir = () => {
+    const txt = `Obtuve ${score}/${total} en la trivia de ${CONFIG.novia} & ${CONFIG.novio} 💍\n¿Tú cuánto sacarás?\n${window.location.origin}/demos/boda`
+    window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank')
+  }
+
+  // ── IDLE ──
+  if (estado === 'idle') return (
+    <Card style={{ maxWidth: 480, margin: '0 auto', padding: 'clamp(32px,5vw,48px)', textAlign: 'center' }}>
+      <div style={{ fontSize: 52, marginBottom: 16 }}>🧠</div>
+      <h3 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: 'clamp(20px,4vw,26px)', color: D.t1, margin: '0 0 12px' }}>
+        ¿Cuánto nos conoces?
+      </h3>
+      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 15, color: D.t2, lineHeight: 1.65, margin: '0 0 32px' }}>
+        {total} preguntas sobre nuestra historia.<br />¿Te atreves?
+      </p>
+      <OutlineBtn onClick={iniciar} style={{ width: '100%', padding: '13px', fontSize: 14, justifyContent: 'center', borderRadius: D.r }}>
+        ¡Jugar ahora! →
+      </OutlineBtn>
+    </Card>
+  )
+
+  // ── RESULTADO ──
+  if (estado === 'result') return (
+    <Card style={{ maxWidth: 480, margin: '0 auto', padding: 'clamp(32px,5vw,48px)', textAlign: 'center' }}>
+      <div style={{ fontSize: 56, marginBottom: 16 }}>{resultado.emoji}</div>
+      <h3 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: 'clamp(22px,4vw,30px)', color: D.t1, margin: '0 0 8px' }}>
+        {score} de {total} correctas
+      </h3>
+
+      {/* Barra de puntuación */}
+      <div style={{ height: 8, background: D.border, borderRadius: 99, margin: '20px 0 8px', overflow: 'hidden' }}>
+        <div style={{
+          height: '100%', borderRadius: 99, background: D.accent,
+          width: `${pct * 100}%`, transition: 'width 1s cubic-bezier(0.4,0,0.2,1)',
+        }} />
+      </div>
+      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 15, color: D.t2, lineHeight: 1.65, margin: '12px 0 32px' }}>
+        {resultado.msg}
+      </p>
+
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <OutlineBtn onClick={iniciar} style={{ flex: 1, justifyContent: 'center', padding: '12px', borderRadius: D.rSm }}>
+          Intentar de nuevo
+        </OutlineBtn>
+        <a
+          onClick={compartir}
+          style={{
+            flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            background: '#25D366', color: '#fff', borderRadius: D.rSm,
+            padding: '12px 16px', fontFamily: 'Outfit, sans-serif', fontSize: 13, fontWeight: 600,
+            cursor: 'pointer', textDecoration: 'none', transition: 'background 0.2s',
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = '#1DA851'}
+          onMouseLeave={e => e.currentTarget.style.background = '#25D366'}
+        >
+          Compartir por WhatsApp
+        </a>
+      </div>
+    </Card>
+  )
+
+  // ── JUGANDO ──
+  return (
+    <Card style={{ maxWidth: 560, margin: '0 auto', padding: 'clamp(24px,4vw,40px)' }}>
+      {/* Barra de progreso */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
+        <div style={{ flex: 1, height: 5, background: D.border, borderRadius: 99, overflow: 'hidden' }}>
+          <div style={{
+            height: '100%', background: D.accent, borderRadius: 99,
+            width: `${(idx / total) * 100}%`, transition: 'width 0.4s ease',
+          }} />
+        </div>
+        <span style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 600, fontSize: 12, color: D.t3, flexShrink: 0 }}>
+          {idx + 1} / {total}
+        </span>
+      </div>
+
+      {/* Pregunta + opciones con animación */}
+      <div key={animKey} style={{ animation: 'fadeUp 0.35s ease' }}>
+        <h3 style={{
+          fontFamily: 'Outfit, sans-serif', fontWeight: 700,
+          fontSize: 'clamp(17px,3vw,22px)', color: D.t1,
+          margin: '0 0 24px', lineHeight: 1.4,
+        }}>
+          {pregunta.pregunta}
+        </h3>
+
+        {/* Opciones */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+          {pregunta.opciones.map((op, i) => {
+            const answered  = seleccion !== null
+            const isCorrect = i === pregunta.correcta
+            const isWrong   = i === seleccion && !isCorrect
+
+            const bg     = answered && isCorrect ? D.sageBg  : answered && isWrong ? '#FBF0EF'     : D.surface
+            const border = answered && isCorrect ? D.sage    : answered && isWrong ? '#C0504A'      : D.border
+            const color  = answered && isCorrect ? D.sage    : answered && isWrong ? '#C0504A'      : D.t1
+
+            const badgeBg    = answered && isCorrect ? D.sage : answered && isWrong ? '#C0504A' : `${D.border}`
+            const badgeColor = answered && (isCorrect || isWrong) ? '#fff' : D.t3
+            const badgeTxt   = answered && isCorrect ? '✓' : answered && isWrong ? '✕' : String.fromCharCode(65 + i)
+
+            return (
+              <button key={i} onClick={() => elegir(i)} style={{
+                width: '100%', textAlign: 'left',
+                fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 500, color,
+                background: bg, border: `1.5px solid ${border}`,
+                borderRadius: D.rSm, padding: '13px 16px',
+                cursor: answered ? 'default' : 'pointer',
+                transition: 'all 0.25s',
+                display: 'flex', alignItems: 'center', gap: 12,
+              }}
+                onMouseEnter={e => { if (!answered) e.currentTarget.style.borderColor = D.accent }}
+                onMouseLeave={e => { if (!answered) e.currentTarget.style.borderColor = D.border }}
+              >
+                <span style={{
+                  width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                  background: badgeBg, color: badgeColor,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: 'Outfit, sans-serif', fontWeight: 700, fontSize: 12,
+                  transition: 'all 0.25s',
+                }}>
+                  {badgeTxt}
+                </span>
+                {op}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Dato curioso */}
+        {mostrarDato && (
+          <div style={{
+            background: D.accentBg, borderRadius: D.rSm,
+            padding: '13px 16px', marginBottom: 20,
+            borderLeft: `3px solid ${D.accent}`,
+          }}>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: D.t2, margin: 0, lineHeight: 1.6 }}>
+              💡 {pregunta.dato}
+            </p>
+          </div>
+        )}
+
+        {seleccion !== null && (
+          <button onClick={siguiente} style={{
+            width: '100%', padding: '13px',
+            fontFamily: 'Outfit, sans-serif', fontSize: 14, fontWeight: 600,
+            background: D.accent, color: '#fff',
+            border: 'none', borderRadius: D.rSm, cursor: 'pointer',
+            transition: 'background 0.2s',
+          }}
+            onMouseEnter={e => e.currentTarget.style.background = '#9A6A4A'}
+            onMouseLeave={e => e.currentTarget.style.background = D.accent}
+          >
+            {isLast ? 'Ver mi resultado 🎉' : 'Siguiente pregunta →'}
+          </button>
+        )}
+      </div>
+    </Card>
+  )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -742,7 +979,18 @@ export function BodaDemo({ setPage }) {
         </div>
       </section>
 
-      {/* ── 05 PADRINOS ─────────────────────────────────────────────────────── */}
+      {/* ── 05 TRIVIA ───────────────────────────────────────────────────────── */}
+      <section style={{ padding: 'clamp(72px,11vw,128px) clamp(20px,5vw,60px)' }}>
+        <div style={{ maxWidth: 820, margin: '0 auto', width: '100%' }}>
+          {sectionLabel('¿cuánto nos conoces?')}
+          <p style={{ fontFamily: 'Lora, serif', fontStyle: 'italic', fontSize: 'clamp(17px,2.5vw,22px)', color: D.t2, textAlign: 'center', marginBottom: 40 }}>
+            Pon a prueba qué tan bien nos conoces antes del gran día
+          </p>
+          <TriviaSection preguntas={CONFIG.trivia} />
+        </div>
+      </section>
+
+      {/* ── 06 PADRINOS ─────────────────────────────────────────────────────── */}
       <section style={{ ...sec }}>
         {sectionLabel('nuestros padrinos')}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(168px,1fr))', gap: 12 }}>
